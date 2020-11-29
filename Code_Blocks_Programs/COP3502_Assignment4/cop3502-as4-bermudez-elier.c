@@ -28,42 +28,10 @@ typedef struct tree_name_node_struct tree_name_node;
 //--------------------------------------------------------
 //From here things may be changed
 
-//CHECKULTRA: Functions imported from other projects. May be unnecessary.
-//--------------------------------------------------------
-//Gerber function
-void remove_crlf(char *s)
-{
-    char *t = s + strlen(s);
-
-    // t begins at the null sentinel at the end of s.
-
-    t--;
-
-    while ((t >= s) && (*t == '\n' || *t == '\r'))
-    {
-        *t = '\0'; // Clobber the character t is pointing at.
-        t--;      // Decrement t.
-    }
-}
-
-//Gerber function
-void get_next_nonblank_line(FILE *ifp, char *s, int max_length)
-{
-    s[0] = '\0';
-
-    while (s[0] == '\0')
-    {
-        fgets(s, max_length, ifp);
-        remove_crlf(s);
-    }
-}
-//--------------------------------------------------------
-
 //item_node functions
 item_node *new_item_node(char* input_name, int input_count)
 {
     item_node *item = malloc(sizeof(item_node));
-    //CHECKULTRA: This way of assigning the name might not actually work
     strcpy(item->name, input_name);
     item->count = input_count;
     item->left = NULL;
@@ -81,7 +49,7 @@ void item_set_right_child(item_node *parent, item_node *child)
     parent->right = child;
 }
 
-//CHECKULTRA: These remove functions might be unnecessary since the deletion function should cover everything
+//CHECK: This remove function may be unnecessary. The proper deletion function should cover everything
 //Note: This remove function will completely sever the link to the left child, only use it when the left child is a leaf
 item_node *item_remove_left_child(item_node *parent)
 {
@@ -90,6 +58,7 @@ item_node *item_remove_left_child(item_node *parent)
     return item;
 }
 
+//CHECK: This remove function may be unnecessary. The proper deletion function should cover everything
 //Note: This remove function will completely sever the link to the right child, only use it when the right child is a leaf
 item_node *item_remove_right_child(item_node *parent)
 {
@@ -131,8 +100,7 @@ item_node *item_bst_insert(item_node *parent, item_node *new_node)
         }
     }
 }
-//We don't really search by value, we search by name.
-//Just use strcmp and if it's 0 they're equal
+
 item_node *item_bst_find(item_node *parent, char* input_name)
 {
     if(parent == NULL)
@@ -152,35 +120,18 @@ item_node *item_bst_find(item_node *parent, char* input_name)
         return item_bst_find(parent->right, input_name);
     }
 }
-//CHECKULTRA: These prints aren't actually how the output should be printed at all
-//Only use them for testing!
-//Gerber Function
-void print_indent(int depth)
-{
-    for(int i = 0; i < depth; i++)
-    {
-        printf(" ");
-    }
-}
 
-//Gerber Function
-void item_print_tree_inorder(item_node *item, int depth)
+void item_print_tree_inorder(item_node *item, FILE *ofp)
 {
     if(item->left)
     {
-        print_indent(depth);
-        printf("descending left...\n");
-        item_print_tree_inorder(item->left, depth + 1);
+        item_print_tree_inorder(item->left, ofp);
     }
-
-    print_indent(depth);
-    printf("Name and count: %s %d\n", item->name, item->count);
+    fprintf(ofp, "%s ", item->name);
 
     if(item->right)
     {
-        print_indent(depth);
-        printf("descending right...\n");
-        item_print_tree_inorder(item->right, depth + 1);
+        item_print_tree_inorder(item->right, ofp);
     }
 }
 
@@ -206,7 +157,7 @@ void tree_name_set_right_child(tree_name_node *parent, tree_name_node *child)
     parent->right = child;
 }
 
-//CHECKULTRA: These remove functions might be unnecessary since the deletion function should cover everything
+//CHECK: This remove function may be unnecessary. The proper deletion function should cover everything
 //Note: This remove function will completely sever the link to the left child, only use it when the left child is a leaf
 tree_name_node *tree_name_remove_left_child(tree_name_node *parent)
 {
@@ -215,6 +166,7 @@ tree_name_node *tree_name_remove_left_child(tree_name_node *parent)
     return tree;
 }
 
+//CHECK: This remove function may be unnecessary. The proper deletion function should cover everything
 //Note: This remove function will completely sever the link to the right child, only use it when the right child is a leaf
 tree_name_node *tree_name_remove_right_child(tree_name_node *parent)
 {
@@ -256,8 +208,7 @@ tree_name_node *tree_name_bst_insert(tree_name_node *parent, tree_name_node *new
         }
     }
 }
-//We don't really search by value, we search by name.
-//Just use strcmp and if it's 0 they're equal
+
 tree_name_node *tree_name_bst_find(tree_name_node *parent, char* input_name)
 {
     if(parent == NULL)
@@ -278,26 +229,99 @@ tree_name_node *tree_name_bst_find(tree_name_node *parent, char* input_name)
     }
 }
 
-//Gerber Function
-void tree_name_print_tree_inorder(tree_name_node *tree, int depth)
+void tree_name_print_tree_inorder(tree_name_node *tree, FILE *ofp)
 {
     if(tree->left)
     {
-        print_indent(depth);
-        printf("descending left...\n");
-        tree_name_print_tree_inorder(tree->left, depth + 1);
+        tree_name_print_tree_inorder(tree->left, ofp);
     }
-
-    print_indent(depth);
-    printf("Name: %s\n", tree->treeName);
+    fprintf(ofp, "%s ", tree->treeName);
 
     if(tree->right)
     {
-        print_indent(depth);
-        printf("descending right...\n");
-        tree_name_print_tree_inorder(tree->right, depth + 1);
+        tree_name_print_tree_inorder(tree->right, ofp);
     }
 }
+
+void tree_name_print_tree_inorder_with_items(tree_name_node *tree, FILE *ofp)
+{
+    if(tree->left)
+    {
+        tree_name_print_tree_inorder_with_items(tree->left, ofp);
+    }
+
+    fprintf(ofp, "===%s===\n", tree->treeName);
+    item_print_tree_inorder(tree->theTree, ofp);
+    fprintf(ofp, "\n");
+    if(tree->right)
+    {
+        tree_name_print_tree_inorder_with_items(tree->right, ofp);
+    }
+}
+
+void print_first_half_of_output(tree_name_node *tree, FILE *ofp){
+    tree_name_print_tree_inorder(tree, ofp);
+    fprintf(ofp, "\n");
+    tree_name_print_tree_inorder_with_items(tree, ofp);
+}
+
+tree_name_node *scan_in_trees(FILE* ifp, tree_name_node *upper_tree, int nTrees)
+{
+    int i = 0;
+    char input_name[32];
+    //Repeats as many times as there are trees
+    for(i=0; i<nTrees; i++)
+    {
+        //Scans in input_name
+        fscanf(ifp, "%s", input_name);
+        //If our root is empty, this becomes the root
+        if(upper_tree==NULL)
+        {
+            upper_tree = new_tree_name_node(input_name);
+        }
+        //If not, we insert it
+        else
+        {
+            tree_name_bst_insert(upper_tree, new_tree_name_node(input_name));
+        }
+    }
+    return upper_tree;
+}
+tree_name_node *scan_in_items(FILE* ifp, tree_name_node *upper_tree, int nItems)
+{
+    int i = 0;
+    char sTree[32];
+    char sItem[32];
+    int cItem;
+
+    for(i=0; i<nItems; i++)
+    {
+        //Scans in sTree, sItem, and cItem
+        fscanf(ifp, "%s %s %d", sTree, sItem, &cItem);
+
+        //Find the tree this item is supposed to go in
+        tree_name_node *correct_tree = tree_name_bst_find(upper_tree, sTree);
+
+        //Exit if the tree does not exist
+        if(correct_tree==NULL)
+        {
+            //CHECKULTRA: Assume this kind of error will not happen once the code is working, remove before submission
+            printf("Error: Could not find parent tree");
+        }
+        //If it does exist, then if the tree's root is null, insert there
+        else if(correct_tree->theTree==NULL)
+        {
+            correct_tree->theTree = new_item_node(sItem, cItem);
+        }
+        //If the root is not null, use the insertion method
+        else
+        {
+            item_bst_insert(correct_tree->theTree, new_item_node(sItem, cItem));
+        }
+    }
+    return upper_tree;
+}
+
 int main(void)
 {
     atexit(report_mem_leak); //This will create a leak_info.txt file which describes any memory leaks your code has
@@ -308,18 +332,22 @@ int main(void)
     ofp = fopen("cop3502-as4-output-bermudez-elier.txt", "w"); //Creates/Opens cop3502-as4-output-bermudez-elier.txt for writing
 
     //Scan in nTrees, nItems, and nCommands
-    int nTrees, nItems, nCommands, i = 0;
+    int nTrees, nItems, nCommands;
     fscanf(ifp, "%d %d %d", &nTrees, &nItems, &nCommands);
-    //We need to create the root then add to that root.
-    //But first what we do in every loop is to make a tree node.
-    //Setup top half of tree
-    for(i=0; i<nTrees; i++)
-    {
-        //Scan in an ntrees amount of lines, make a tree of trees out of them (first hard step, basic tree implementation at this point)
-    }
 
-    //NOTE: You can put bottom items in a bottom item tree and top items in a top item tree,
-    //but so far there is not actually any implementation for putting
+    //Setup the top half of trees
+    tree_name_node *upper_tree = NULL;
+    upper_tree = scan_in_trees(ifp, upper_tree, nTrees);
+
+    //Setup the bottom half of trees
+    upper_tree = scan_in_items(ifp, upper_tree, nItems);
+
+    //So far everything works as intended!
+    //Next step is to make a proper print statement for how the program wants it, and just test print based on that from now on
+    //Then get rid of the old print test statements.
+    //Modify item_print_tree_inorder to just print their names in one neat line
+
+    print_first_half_of_output(upper_tree, ofp);
 
     /*
     //TESTING: item_node tree works
