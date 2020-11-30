@@ -120,6 +120,80 @@ item_node *item_bst_find(item_node *parent, char* input_name)
         return item_bst_find(parent->right, input_name);
     }
 }
+int returnMax(int a, int b)
+{
+    if(a>b)
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
+}
+
+int item_bst_find_depth(item_node *parent, int count)
+{
+    int leftDeepest = 0;
+    int rightDeepest = 0;
+    //If the parent never existed, there's an error
+    if(parent == NULL)
+    {
+        return -1;
+    }
+    //If the parent has no children, return its depth (this is a leaf)
+    else if((parent->left==NULL)&&(parent->right==NULL))
+    {
+        return count;
+    }
+    //We know it has children so we iterate count here
+    count++;
+
+    //If it has left children, go left
+    if(parent->left!=NULL)
+    {
+        leftDeepest = item_bst_find_depth(parent->left, count);
+    }
+    else
+    {
+        leftDeepest = 0;
+    }
+    //If it has right children, go right
+    if(parent->right!=NULL)
+    {
+        rightDeepest = item_bst_find_depth(parent->right, count);
+    }
+    else
+    {
+        rightDeepest = 0;
+    }
+    return returnMax(leftDeepest, rightDeepest);
+}
+
+int item_bst_find_count(item_node *parent, int *count)
+{
+    //If the parent never existed, there's an error
+    if(parent == NULL)
+    {
+        return 0;
+    }
+    else{
+        //If it does exist, add it's count
+        *count = *count + parent->count;
+
+        //If it has left children, go left
+        if(parent->left!=NULL)
+        {
+            item_bst_find_count(parent->left, count);
+        }
+
+        //If it has right children, go right
+        if(parent->right!=NULL){
+            item_bst_find_count(parent->right, count);
+        }
+    }
+    return *count;
+}
 
 item_node *search_in_name_node(item_node *parent, char* input_name)
 {
@@ -360,8 +434,8 @@ tree_name_node *scan_in_items(FILE* ifp, tree_name_node *upper_tree, int nItems)
 void *command_search(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, char* tempItemName)
 {
     /*
-    Search for item item in tree tree. Print the count if itís found, ì<item> not found in <tree>î
-    if the item doesnít exist there, or ì<tree> does not existî if the tree doesnít exist.
+    Search for item item in tree tree. Print the count if it‚Äôs found, ‚Äú<item> not found in <tree>‚Äù
+    if the item doesn‚Äôt exist there, or ‚Äú<tree> does not exist‚Äù if the tree doesn‚Äôt exist.
     */
     //Find the tree our item is in
     tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
@@ -408,14 +482,80 @@ void *command_item_before(FILE *ofp, tree_name_node *upper_tree, char* tempTreeN
     }
     return 0;
 }
+int absoluteVal(int a, int b){
+    int dif = a-b;
+    if(dif<0){
+        dif = dif*(-1);
+    }
+    return dif;
+}
 
 void *command_height_balance(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
 {
+    /*
+    ‚ñ™ Prints the heights of the left and right subtrees of tree tree, and whether or not they‚Äôre balanced.
+‚ñ™ A tree is balanced if the heights of its left and right subtrees differ by at most one.
+‚ñ™ A tree with only a root has height 0.
+‚ñ™ A null reference has height -1.
+*/
+/*animal: left height 1, right height 3, difference 2, not balanced*/
+
+    //Find the tree we are using
+    tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
+    //If the tree does not exist, print that and exit.
+    if(tempTree == NULL)
+    {
+        fprintf(ofp, "%s does not exist", tempTreeName);
+        return 0;
+    }
+    //Find the left and right depths
+    else
+    {
+        //Find the left depth
+        int leftDepth = 0;
+        leftDepth = item_bst_find_depth(tempTree->theTree->left, 0);
+
+        //Find the right depth
+        int rightDepth = 0;
+        rightDepth = item_bst_find_depth(tempTree->theTree->right, 0);
+
+        //Find the difference, print half the message
+        int dif = absoluteVal(leftDepth, rightDepth);
+        fprintf(ofp, "%s: left height %d, right height %d, difference %d,", tempTreeName, leftDepth, rightDepth, dif);
+
+        //Print not if the difference is too large, finish message.
+        if(dif>1){
+            fprintf(ofp, " not");
+        }
+        fprintf(ofp, " balanced");
+    }
     return 0;
 }
 
 void *command_count(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
 {
+    //int item_bst_find_count(item_node *parent, int *count)
+    /*
+            int count = 0;
+        item_print_items_before(tempTree->theTree, ofp, tempItemName, &count);
+        */
+
+    //Find the tree we are using
+    tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
+    //If the tree does not exist, print that and exit.
+    if(tempTree == NULL)
+    {
+        fprintf(ofp, "%s does not exist", tempTreeName);
+        return 0;
+    }
+    //If it does, find and print the count
+    else{
+        int count = 0;
+        item_bst_find_count(tempTree->theTree, &count);
+        //we did the wrong count. This wants total items, not total kinds of animals. Test if this works anyways
+        fprintf(ofp, "%s count %d", tempTreeName, count);
+    }
+
     return 0;
 }
 
@@ -435,15 +575,6 @@ tree_name_node *scan_in_commands(FILE* ifp, FILE* ofp, tree_name_node *upper_tre
     char currCommand[32];
     char tempTreeName[32];
     char tempItemName[32];
-
-    /*
-    char input_name[32];
-    //Repeats as many times as there are trees
-    for(i=0; i<nTrees; i++)
-    {
-        //Scans in input_name
-        fscanf(ifp, "%s", input_name);
-        */
 
     //For each of these, all we want it to do is scan in the information, then pass it to a different function.
     for(i=0; i<nCommands; i++)

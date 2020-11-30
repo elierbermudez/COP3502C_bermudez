@@ -14,15 +14,15 @@ tilapia not found in fish
 20 crow found in bird
 cow not found in bird
 30 cat found in animal
-items before deer: 4
-
-
-
+item before deer: 4
+animal: left height 1, right height 3, difference 2, not balanced
+bird: left height -1, right height 2, difference 3, not balanced
+fish: left height 1, right height 1, difference 0, balanced
 flower does not exist
-
-
+animal count 142
+fruit count 515
 
 30 cat found in animal
-
+animal count 142
 
 
