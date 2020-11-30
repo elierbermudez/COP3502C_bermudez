@@ -31,3 +31,22 @@ fruit avocado 25
 fruit cherry 100
 fruit cranberry 100
 animal horse 6
+search fruit avocado
+search fish tilapia
+search animal cow
+search bird crow
+search bird cow
+search animal cat
+item_before animal deer
+height_balance animal
+height_balance bird
+height_balance fish
+search flower rose
+count animal
+count fruit
+delete animal cat
+search animal cat
+count animal
+delete fish swordfish
+delete fruit avocado
+delete_tree animal

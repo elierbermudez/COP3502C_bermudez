@@ -121,6 +121,11 @@ item_node *item_bst_find(item_node *parent, char* input_name)
     }
 }
 
+item_node *search_in_name_node(item_node *parent, char* input_name)
+{
+    return item_bst_find(parent, input_name);
+}
+
 void item_print_tree_inorder(item_node *item, FILE *ofp)
 {
     if(item->left)
@@ -229,6 +234,11 @@ tree_name_node *tree_name_bst_find(tree_name_node *parent, char* input_name)
     }
 }
 
+tree_name_node *search_for_name_node()(tree_name_node *parent, char* input_name)
+{
+    return tree_name_bst_find(parent, input_name);
+}
+
 void tree_name_print_tree_inorder(tree_name_node *tree, FILE *ofp)
 {
     if(tree->left)
@@ -259,10 +269,17 @@ void tree_name_print_tree_inorder_with_items(tree_name_node *tree, FILE *ofp)
     }
 }
 
-void print_first_half_of_output(tree_name_node *tree, FILE *ofp){
+void print_first_half_of_output(tree_name_node *tree, FILE *ofp)
+{
     tree_name_print_tree_inorder(tree, ofp);
     fprintf(ofp, "\n");
     tree_name_print_tree_inorder_with_items(tree, ofp);
+    fprintf(ofp, "=====Processing Commands=====\n");
+}
+
+void traverse_in_order(tree_name_node *tree, FILE *ofp)
+{
+    print_first_half_of_output(tree, ofp);
 }
 
 tree_name_node *scan_in_trees(FILE* ifp, tree_name_node *upper_tree, int nTrees)
@@ -302,10 +319,10 @@ tree_name_node *scan_in_items(FILE* ifp, tree_name_node *upper_tree, int nItems)
         //Find the tree this item is supposed to go in
         tree_name_node *correct_tree = tree_name_bst_find(upper_tree, sTree);
 
-        //Exit if the tree does not exist
+        //Exit and print an error statement if the tree does not exist
         if(correct_tree==NULL)
         {
-            //CHECKULTRA: Assume this kind of error will not happen once the code is working, remove before submission
+            //This kind of error should not happen if the input is valid
             printf("Error: Could not find parent tree");
         }
         //If it does exist, then if the tree's root is null, insert there
@@ -317,6 +334,120 @@ tree_name_node *scan_in_items(FILE* ifp, tree_name_node *upper_tree, int nItems)
         else
         {
             item_bst_insert(correct_tree->theTree, new_item_node(sItem, cItem));
+        }
+    }
+    return upper_tree;
+}
+void *command_search(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, char* tempItemName)
+{
+    /*
+    Search for item item in tree tree. Print the count if it’s found, “<item> not found in <tree>”
+    if the item doesn’t exist there, or “<tree> does not exist” if the tree doesn’t exist.
+    */
+    //Find the tree our item is in
+    tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
+    //If the tree does not exist, print that and exit.
+    if(tempTree == NULL)
+    {
+        fprintf(ofp, "%s does not exist", tempTreeName);
+        return 0;
+    }
+    //Find the item in the tree
+    else
+    {
+        item_node *tempItem = item_bst_find(tempTree->theTree, tempItemName);
+        //If the item does not exist, print that and exit
+        if(tempItem == NULL)
+        {
+            fprintf(ofp, "%s not found in %s", tempItemName, tempTreeName);
+        }
+        //If everything worked, print the count
+        else
+        {
+            fprintf(ofp, "%d %s found in %s", tempItem->count, tempItemName, tempTreeName);
+        }
+    }
+    return 0;
+}
+
+void *command_item_before(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, char* tempItemName)
+{
+    return 0;
+}
+
+void *command_height_balance(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
+{
+    return 0;
+}
+
+void *command_count(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
+{
+    return 0;
+}
+
+tree_name_node *command_delete(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, char* tempItemName)
+{
+    return upper_tree;
+}
+
+tree_name_node *command_delete_tree(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
+{
+    return upper_tree;
+}
+
+tree_name_node *scan_in_commands(FILE* ifp, FILE* ofp, tree_name_node *upper_tree, int nCommands)
+{
+    int i = 0;
+    char currCommand[32];
+    char tempTreeName[32];
+    char tempItemName[32];
+
+    /*
+    char input_name[32];
+    //Repeats as many times as there are trees
+    for(i=0; i<nTrees; i++)
+    {
+        //Scans in input_name
+        fscanf(ifp, "%s", input_name);
+        */
+
+    //For each of these, all we want it to do is scan in the information, then pass it to a different function.
+    for(i=0; i<nCommands; i++)
+    {
+        fscanf(ifp, "%s", currCommand);
+        if(strcmp(currCommand, "search")==0)
+        {
+            fscanf(ifp, "%s %s", tempTreeName, tempItemName);
+            command_search(ofp, upper_tree, tempTreeName, tempItemName);
+        }
+        else if(strcmp(currCommand, "item_before")==0)
+        {
+            fscanf(ifp, "%s %s", tempTreeName, tempItemName);
+            command_item_before(ofp, upper_tree, tempTreeName, tempItemName);
+        }
+        else if(strcmp(currCommand, "height_balance")==0)
+        {
+            fscanf(ifp, "%s", tempTreeName);
+            command_height_balance(ofp, upper_tree, tempTreeName);
+        }
+        else if(strcmp(currCommand, "count")==0)
+        {
+            fscanf(ifp, "%s", tempTreeName);
+            command_count(ofp, upper_tree, tempTreeName);
+        }
+        else if(strcmp(currCommand, "delete")==0)
+        {
+            fscanf(ifp, "%s %s", tempTreeName, tempItemName);
+            upper_tree = command_delete(ofp, upper_tree, tempTreeName, tempItemName);
+        }
+        else if(strcmp(currCommand, "delete_tree")==0)
+        {
+            fscanf(ifp, "%s", tempTreeName);
+            upper_tree = command_delete_tree(ofp, upper_tree, tempTreeName);
+        }
+        if(i!=(nCommands-1))
+        {
+            fprintf(ofp, "\n");
         }
     }
     return upper_tree;
@@ -342,32 +473,11 @@ int main(void)
     //Setup the bottom half of trees
     upper_tree = scan_in_items(ifp, upper_tree, nItems);
 
-    //So far everything works as intended!
-    //Next step is to make a proper print statement for how the program wants it, and just test print based on that from now on
-    //Then get rid of the old print test statements.
-    //Modify item_print_tree_inorder to just print their names in one neat line
-
+    //Print the top half
     print_first_half_of_output(upper_tree, ofp);
 
-    /*
-    //TESTING: item_node tree works
-    item_node *item = new_item_node("root", 5);
-    item_bst_insert(item, new_item_node("bob", 15));
-    item_bst_insert(item, new_item_node("carson", 20));
-    item_bst_insert(item, new_item_node("cara", 5));
-    item_bst_insert(item, new_item_node("boa", 3));
-    item_bst_insert(item, new_item_node("wilson", 10));
-    //item_print_tree_inorder(item, 0);
-
-    //TESTING: tree_node tree works
-    tree_name_node *tree = new_tree_name_node("root");
-    tree_name_bst_insert(tree, new_tree_name_node("bob"));
-    tree_name_bst_insert(tree, new_tree_name_node("carson"));
-    tree_name_bst_insert(tree, new_tree_name_node("cara"));
-    tree_name_bst_insert(tree, new_tree_name_node("boa"));
-    tree_name_bst_insert(tree, new_tree_name_node("wilson"));
-    tree_name_print_tree_inorder(tree, 0);
-    */
+    //Scan in all commands
+    upper_tree = scan_in_commands(ifp, ofp, upper_tree, nCommands);
 
     //CHECKULTRA: Free up your memory here
     /*
@@ -381,4 +491,5 @@ int main(void)
     //Closing scanners
     fclose(ifp);
     fclose(ofp);
+    return 0;
 }
