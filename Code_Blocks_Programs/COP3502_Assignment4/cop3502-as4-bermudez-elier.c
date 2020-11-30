@@ -140,6 +140,25 @@ void item_print_tree_inorder(item_node *item, FILE *ofp)
     }
 }
 
+void item_print_items_before(item_node *item, FILE *ofp, char* master_item, int *count)
+{
+    if(item->left)
+    {
+        *count = *count+1;
+        item_print_items_before(item->left, ofp, master_item, count);
+    }
+
+    if(strcmp(item->name, master_item)==0)
+    {
+        fprintf(ofp, "item before %s: %d", master_item, *count);
+    }
+
+    if(item->right)
+    {
+        item_print_items_before(item->right, ofp, master_item, count);
+    }
+}
+
 //tree_name_node functions
 tree_name_node *new_tree_name_node(char* input_name)
 {
@@ -234,7 +253,7 @@ tree_name_node *tree_name_bst_find(tree_name_node *parent, char* input_name)
     }
 }
 
-tree_name_node *search_for_name_node()(tree_name_node *parent, char* input_name)
+tree_name_node *search_for_name_node(tree_name_node *parent, char* input_name)
 {
     return tree_name_bst_find(parent, input_name);
 }
@@ -372,6 +391,21 @@ void *command_search(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, 
 
 void *command_item_before(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, char* tempItemName)
 {
+    //Count the number of items lexographically before item item in tree tree.
+    //Find the tree our item is in
+    tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
+    //If the tree does not exist, print that and exit.
+    if(tempTree == NULL)
+    {
+        fprintf(ofp, "%s does not exist", tempTreeName);
+        return 0;
+    }
+    //Find the item in the tree, print the items before it.
+    else
+    {
+        int count = 0;
+        item_print_items_before(tempTree->theTree, ofp, tempItemName, &count);
+    }
     return 0;
 }
 

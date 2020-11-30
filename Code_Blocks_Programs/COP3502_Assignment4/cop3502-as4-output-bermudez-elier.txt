@@ -14,7 +14,7 @@ tilapia not found in fish
 20 crow found in bird
 cow not found in bird
 30 cat found in animal
-
+items before deer: 4
 
 
 
