@@ -692,8 +692,127 @@ tree_name_node *command_delete(FILE *ofp, tree_name_node *upper_tree, char* temp
     return upper_tree;
 }
 
+tree_name_node *get_leftmost_tree(FILE *ofp, tree_name_node *our_current_tree){
+    //If we can't go left anymore, return the current item
+    if(our_current_tree->left==NULL){
+        return our_current_tree;
+    }
+    //Otherwise, go left and check again
+    else{
+        return get_leftmost(ofp, our_current_tree->left);
+    }
+}
+
+void command_delete_actual_tree(FILE *ofp, tree_name_node *upper_tree, tree_name_node *our_tree_to_be_deleted)
+{
+    //If our node has both a left child and a right child
+    if(our_tree_to_be_deleted->left!=NULL && our_tree_to_be_deleted->right!=NULL)
+    {
+        //We get the leftmost right descendent by going right then feeding that to our get_leftmost function
+        tree_name_node *leftmost_right_descendent = get_leftmost(ofp, our_tree_to_be_deleted->right);
+
+        //Then we copy the name and elemenets of it into our tree to be deleted
+        strcpy(our_tree_to_be_deleted->treeName, leftmost_right_descendent->treeName);
+        our_tree_to_be_deleted->theTree = leftmost_right_descendent->theTree;
+
+        //Note that the leftmost_right_descendent MAY have children, so we should recursively call command_delete_actual_tree
+        //to delete it in such a way that the link between its parent and children is maintained
+        //If a leftmost right descendent manages to have both a left and right child then it would by definition not be
+        //the leftmost right descendent. Therefore we know that when we do this recursive call it won't actually loop
+        //and could only trigger the if statements for 0 or 1 child
+        command_delete_actual_tree(ofp, upper_tree, leftmost_right_descendent);
+    }
+    //If our node has 0 children, just delete it
+    else if(our_tree_to_be_deleted->left==NULL && our_tree_to_be_deleted->right==NULL)
+    {
+        our_tree_to_be_deleted->left = NULL;
+        our_tree_to_be_deleted->right = NULL;
+
+        free(our_tree_to_be_deleted->treeName);
+
+        our_tree_to_be_deleted->theTree = NULL;
+
+        our_tree_to_be_deleted = NULL;
+    }
+    //If our node has 1 left child, shift it upwards
+    else if(our_tree_to_be_deleted->left!=NULL)
+    {
+        //First we copy the left child of the tree to be deleted
+        tree_name_node *left_child_of_to_be_deleted = our_tree_to_be_deleted->left;
+
+        //Then we copy the name, tree, left, and right child of it into our_tree_to_be_deleted
+        strcpy(our_tree_to_be_deleted->treeName, left_child_of_to_be_deleted->treeName);
+        our_tree_to_be_deleted->theTree = left_child_of_to_be_deleted->theTree;
+        our_tree_to_be_deleted->left = left_child_of_to_be_deleted->left;
+        our_tree_to_be_deleted->right = left_child_of_to_be_deleted->right;
+
+        //Then we delete the left child of the item to be deleted, which is now just a 2nd copy of the same information
+        //CHECK: When freeing left and right, it should just be freeing up pointers and not actually deleting those items
+        //Additionally, the our_item_to_be_deleted item_node SHOULD be fine once these are deleted
+        free(left_child_of_to_be_deleted->treeName);
+
+        left_child_of_to_be_deleted->theTree = NULL;
+
+        free(left_child_of_to_be_deleted->left);
+        left_child_of_to_be_deleted->left = NULL;
+
+        free(left_child_of_to_be_deleted->right);
+        left_child_of_to_be_deleted->right = NULL;
+
+        left_child_of_to_be_deleted = NULL;
+    }
+    //If our node has 1 right child, shift it upwards
+    else if(our_tree_to_be_deleted->right!=NULL)
+    {
+        //First we copy the right child of the item to be deleted
+        tree_name_node *right_child_of_to_be_deleted = our_tree_to_be_deleted->right;
+
+        //Then we copy the name, tree, left, and right child of it into our_tree_to_be_deleted
+        strcpy(our_tree_to_be_deleted->treeName, right_child_of_to_be_deleted->treeName);
+        our_tree_to_be_deleted->theTree = right_child_of_to_be_deleted->theTree;
+        our_tree_to_be_deleted->left = right_child_of_to_be_deleted->left;
+        our_tree_to_be_deleted->right = right_child_of_to_be_deleted->right;
+
+        //Then we delete the right child of the item to be deleted, which is now just a 2nd copy of the same information
+        //CHECK: When freeing left and right, it should just be freeing up pointers and not actually deleting those items
+        //Additionally, the our_item_to_be_deleted item_node SHOULD be fine once these are deleted
+        free(right_child_of_to_be_deleted->treeName);
+
+        right_child_of_to_be_deleted->theTree = NULL;
+
+        free(right_child_of_to_be_deleted->left);
+        right_child_of_to_be_deleted->left = NULL;
+
+        free(right_child_of_to_be_deleted->right);
+        right_child_of_to_be_deleted->right = NULL;
+
+        right_child_of_to_be_deleted = NULL;
+    }
+}
+
+void command_delete_validated_tree(FILE *ofp, tree_name_node *upper_tree, tree_name_node *our_tree_to_be_deleted)
+{
+    //We print out the message that something has been removed before it actually happens since it will be harder to print once it is gone
+    fprintf(ofp, "%s deleted", our_tree_to_be_deleted->treeName);
+
+    command_delete_actual_tree(ofp, upper_tree, our_tree_to_be_deleted);
+}
+
 tree_name_node *command_delete_tree(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
 {
+    //Find the tree we are using
+    tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
+    //If the tree does not exist, print that and exit.
+    if(tempTree == NULL)
+    {
+        fprintf(ofp, "%s does not exist", tempTreeName);
+        return 0;
+    }
+    else
+    {
+        //Delete the tree
+        command_delete_validated_tree(ofp, upper_tree, tempTree);
+    }
     return upper_tree;
 }
 

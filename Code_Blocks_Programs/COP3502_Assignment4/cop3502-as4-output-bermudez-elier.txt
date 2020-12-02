@@ -21,8 +21,9 @@ fish: left height 1, right height 1, difference 0, balanced
 flower does not exist
 animal count 142
 fruit count 515
-
-30 cat found in animal
-animal count 142
-
-
+cat deleted from animal
+cat not found in animal
+animal count 112
+swordfish deleted from fish
+avocado deleted from fruit
+animal deleted
