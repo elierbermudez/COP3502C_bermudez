@@ -177,7 +177,8 @@ int item_bst_find_count(item_node *parent, int *count)
     {
         return 0;
     }
-    else{
+    else
+    {
         //If it does exist, add it's count
         *count = *count + parent->count;
 
@@ -188,7 +189,8 @@ int item_bst_find_count(item_node *parent, int *count)
         }
 
         //If it has right children, go right
-        if(parent->right!=NULL){
+        if(parent->right!=NULL)
+        {
             item_bst_find_count(parent->right, count);
         }
     }
@@ -482,9 +484,11 @@ void *command_item_before(FILE *ofp, tree_name_node *upper_tree, char* tempTreeN
     }
     return 0;
 }
-int absoluteVal(int a, int b){
+int absoluteVal(int a, int b)
+{
     int dif = a-b;
-    if(dif<0){
+    if(dif<0)
+    {
         dif = dif*(-1);
     }
     return dif;
@@ -494,11 +498,11 @@ void *command_height_balance(FILE *ofp, tree_name_node *upper_tree, char* tempTr
 {
     /*
     ▪ Prints the heights of the left and right subtrees of tree tree, and whether or not they’re balanced.
-▪ A tree is balanced if the heights of its left and right subtrees differ by at most one.
-▪ A tree with only a root has height 0.
-▪ A null reference has height -1.
-*/
-/*animal: left height 1, right height 3, difference 2, not balanced*/
+    ▪ A tree is balanced if the heights of its left and right subtrees differ by at most one.
+    ▪ A tree with only a root has height 0.
+    ▪ A null reference has height -1.
+    */
+    /*animal: left height 1, right height 3, difference 2, not balanced*/
 
     //Find the tree we are using
     tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
@@ -524,7 +528,8 @@ void *command_height_balance(FILE *ofp, tree_name_node *upper_tree, char* tempTr
         fprintf(ofp, "%s: left height %d, right height %d, difference %d,", tempTreeName, leftDepth, rightDepth, dif);
 
         //Print not if the difference is too large, finish message.
-        if(dif>1){
+        if(dif>1)
+        {
             fprintf(ofp, " not");
         }
         fprintf(ofp, " balanced");
@@ -534,12 +539,6 @@ void *command_height_balance(FILE *ofp, tree_name_node *upper_tree, char* tempTr
 
 void *command_count(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
 {
-    //int item_bst_find_count(item_node *parent, int *count)
-    /*
-            int count = 0;
-        item_print_items_before(tempTree->theTree, ofp, tempItemName, &count);
-        */
-
     //Find the tree we are using
     tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
     //If the tree does not exist, print that and exit.
@@ -549,7 +548,8 @@ void *command_count(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
         return 0;
     }
     //If it does, find and print the count
-    else{
+    else
+    {
         int count = 0;
         item_bst_find_count(tempTree->theTree, &count);
         //we did the wrong count. This wants total items, not total kinds of animals. Test if this works anyways
@@ -559,8 +559,136 @@ void *command_count(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName)
     return 0;
 }
 
+item_node *get_leftmost(FILE *ofp, item_node *our_current_item){
+    //If we can't go left anymore, return the current item
+    if(our_current_item->left==NULL){
+        return our_current_item;
+    }
+    //Otherwise, go left and check again
+    else{
+        return get_leftmost(ofp, our_current_item->left);
+    }
+}
+
+void command_delete_actual(FILE *ofp, tree_name_node *our_tree, item_node *our_item_to_be_deleted)
+{
+    //If our node has both a left child and a right child
+    if(our_item_to_be_deleted->left!=NULL && our_item_to_be_deleted->right!=NULL)
+    {
+        //We get the leftmost right descendent by going right then feeding that to our get_leftmost function
+        item_node *leftmost_right_descendent = get_leftmost(ofp, our_item_to_be_deleted->right);
+
+        //Then we copy the name, count, of it into our_item_to_be_deleted
+        strcpy(our_item_to_be_deleted->name, leftmost_right_descendent->name);
+        our_item_to_be_deleted->count = leftmost_right_descendent->count;
+
+        //Note that the leftmost_right_descendent MAY have children, so we should recursively call command_delete_actual
+        //to delete it in such a way that the link between its parent and children is maintained
+        //If a leftmost right descendent manages to have both a left and right child then it would by definition not be
+        //the leftmost right descendent. Therefore we know that when we do this recursive call it won't actually loop
+        //and could only trigger the if statements for 0 or 1 child
+        command_delete_actual(ofp, our_tree, leftmost_right_descendent);
+    }
+    //If our node has 0 children, just delete it
+    else if(our_item_to_be_deleted->left==NULL && our_item_to_be_deleted->right==NULL)
+    {
+        our_item_to_be_deleted->count = 0;
+
+        free(our_item_to_be_deleted->name);
+
+        our_item_to_be_deleted = NULL;
+    }
+    //If our node has 1 left child, shift it upwards
+    else if(our_item_to_be_deleted->left!=NULL)
+    {
+        //First we copy the left child of the item to be deleted
+        item_node *left_child_of_to_be_deleted = our_item_to_be_deleted->left;
+
+        //Then we copy the name, count, left, and right child of it into our_item_to_be_deleted
+        strcpy(our_item_to_be_deleted->name, left_child_of_to_be_deleted->name);
+        our_item_to_be_deleted->count = left_child_of_to_be_deleted->count;
+        our_item_to_be_deleted->left = left_child_of_to_be_deleted->left;
+        our_item_to_be_deleted->right = left_child_of_to_be_deleted->right;
+
+        //Then we delete the left child of the item to be deleted, which is now just a 2nd copy of the same information
+        //CHECK: When freeing left and right, it should just be freeing up pointers and not actually deleting those items
+        //Additionally, the our_item_to_be_deleted item_node SHOULD be fine once these are deleted
+        free(left_child_of_to_be_deleted->name);
+
+        left_child_of_to_be_deleted->count = 0;
+
+        free(left_child_of_to_be_deleted->left);
+        left_child_of_to_be_deleted->left = NULL;
+
+        free(left_child_of_to_be_deleted->right);
+        left_child_of_to_be_deleted->right = NULL;
+
+        left_child_of_to_be_deleted = NULL;
+    }
+    //If our node has 1 right child, shift it upwards
+    else if(our_item_to_be_deleted->right!=NULL)
+    {
+        //First we copy the right child of the item to be deleted
+        item_node *right_child_of_to_be_deleted = our_item_to_be_deleted->right;
+
+        //Then we copy the name, count, left, and right child of it into our_item_to_be_deleted
+        strcpy(our_item_to_be_deleted->name, right_child_of_to_be_deleted->name);
+        our_item_to_be_deleted->count = right_child_of_to_be_deleted->count;
+        our_item_to_be_deleted->left = right_child_of_to_be_deleted->left;
+        our_item_to_be_deleted->right = right_child_of_to_be_deleted->right;
+
+        //Then we delete the right child of the item to be deleted, which is now just a 2nd copy of the same information
+        //CHECK: When freeing left and right, it should just be freeing up pointers and not actually deleting those items
+        //Additionally, the our_item_to_be_deleted item_node SHOULD be fine once these are deleted
+        free(right_child_of_to_be_deleted->name);
+
+        right_child_of_to_be_deleted->count = 0;
+
+        free(right_child_of_to_be_deleted->left);
+        right_child_of_to_be_deleted->left = NULL;
+
+        free(right_child_of_to_be_deleted->right);
+        right_child_of_to_be_deleted->right = NULL;
+
+        right_child_of_to_be_deleted = NULL;
+    }
+}
+
+void command_delete_validated(FILE *ofp, tree_name_node *upper_tree, tree_name_node *our_tree, item_node *our_item_to_be_deleted)
+{
+    //We print out the message that something has been removed before it actually happens since it will be harder to print once it is gone
+    fprintf(ofp, "%s deleted from %s", our_item_to_be_deleted->name, our_tree->treeName);
+
+    command_delete_actual(ofp, our_tree, our_item_to_be_deleted);
+}
+
 tree_name_node *command_delete(FILE *ofp, tree_name_node *upper_tree, char* tempTreeName, char* tempItemName)
 {
+    //Find the tree we are using
+    tree_name_node *tempTree = tree_name_bst_find(upper_tree, tempTreeName);
+    //If the tree does not exist, print that and exit.
+    if(tempTree == NULL)
+    {
+        fprintf(ofp, "%s does not exist", tempTreeName);
+        return 0;
+    }
+    else
+    {
+        //Find the item we are using
+        item_node *tempItem = item_bst_find(tempTree->theTree, tempItemName);
+        //If the item does not exist, print that and exit
+        if(tempItem==NULL)
+        {
+            fprintf(ofp, "%s does not exist", tempItemName);
+            return 0;
+        }
+        else
+        {
+            //If both the item and tree exist, move to a separate function
+            command_delete_validated(ofp, upper_tree, tempTree, tempItem);
+        }
+    }
+
     return upper_tree;
 }
 
