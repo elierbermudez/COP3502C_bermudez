@@ -699,7 +699,7 @@ tree_name_node *get_leftmost_tree(FILE *ofp, tree_name_node *our_current_tree){
     }
     //Otherwise, go left and check again
     else{
-        return get_leftmost(ofp, our_current_tree->left);
+        return get_leftmost_tree(ofp, our_current_tree->left);
     }
 }
 
@@ -709,7 +709,7 @@ void command_delete_actual_tree(FILE *ofp, tree_name_node *upper_tree, tree_name
     if(our_tree_to_be_deleted->left!=NULL && our_tree_to_be_deleted->right!=NULL)
     {
         //We get the leftmost right descendent by going right then feeding that to our get_leftmost function
-        tree_name_node *leftmost_right_descendent = get_leftmost(ofp, our_tree_to_be_deleted->right);
+        tree_name_node *leftmost_right_descendent = get_leftmost_tree(ofp, our_tree_to_be_deleted->right);
 
         //Then we copy the name and elemenets of it into our tree to be deleted
         strcpy(our_tree_to_be_deleted->treeName, leftmost_right_descendent->treeName);
